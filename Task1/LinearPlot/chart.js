@@ -4,11 +4,12 @@ async function buildPlot() {
     //console.table(data);
     const dateParser = d3.timeParse("%Y-%m-%d");
     const yAccessor = (d) => d.temperatureMin;
+    const yAccessorHigh = (d) => d.temperatureHigh;
     const xAccessor = (d) => dateParser(d.date);
     // Функции для инкапсуляции доступа к колонкам набора данных
 
     var dimension = {
-        width: window.innerWidth*0.9,
+        width: window.innerWidth*0.5,
         height: 400,
         margin: {
             top: 15,
@@ -36,14 +37,39 @@ async function buildPlot() {
         .domain(d3.extent(data,xAccessor))
         .range([0,dimension.boundedWidth]);
 
+    const yScalerHigh = d3.scaleLinear()
+        .domain(d3.extent(data,yAccessorHigh))
+        .range([dimension.boundedHeight,0]);
+
+
     var lineGenerator = d3.line()
         .x(d => xScaler(xAccessor(d)))
         .y(d => yScaler(yAccessor(d)));
 
+    var lineGeneratorHigh = d3.line()
+        .x(d => xScaler(xAccessor(d)))
+        .y(d => yScalerHigh(yAccessorHigh(d)));
+
     bounded.append("path")
         .attr("d",lineGenerator(data))
-        // .attr("fill","none")
-        .attr("stroke","lightgrey")
+        .attr("fill","none")
+        .attr("stroke","blue")
+
+    bounded.append("path")
+        .attr("d",lineGeneratorHigh(data))
+        .attr("fill","none")
+        .attr("stroke","red")
+
+    const yAxisGenerator = d3.axisLeft(yScaler);
+    bounded.append("g")
+        .call(yAxisGenerator)
+        .style("transform", `translate(${dimension.boundedWidth + 20}px)`) ;
+
+    const xAxisGenerator = d3.axisBottom(xScaler);
+    bounded.append("g")
+        .call(xAxisGenerator.tickFormat(d3.timeFormat("%m-%d")))
+        .style("transform", `translateY(${dimension.boundedHeight}px)`);
+
 
 }
 
